@@ -9,17 +9,22 @@ cloudflared 现已支持通过 SOCKS5 代理连接到 Cloudflare 边缘节点，
 
 ## 🚀 快速开始
 
+**⚠️ 重要：参数位置**
+- `--edge-proxy-url` 是 `tunnel` 命令级别的参数
+- 必须放在 `tunnel` 和 `run` 之间
+- 格式：`cloudflared tunnel --edge-proxy-url <URL> run <tunnel-name>`
+
 ### 方式 1: 命令行参数
 
 ```bash
 # 不带认证的代理
-cloudflared tunnel run --edge-proxy-url socks5://127.0.0.1:1080 mytunnel
+cloudflared tunnel --edge-proxy-url socks5://127.0.0.1:1080 run mytunnel
 
 # 带用户名密码认证的代理
-cloudflared tunnel run --edge-proxy-url socks5://user:pass@proxy.example.com:1080 mytunnel
+cloudflared tunnel --edge-proxy-url socks5://user:pass@proxy.example.com:1080 run mytunnel
 
 # 使用默认端口 1080
-cloudflared tunnel run --edge-proxy-url socks5://proxy.example.com mytunnel
+cloudflared tunnel --edge-proxy-url socks5://proxy.example.com run mytunnel
 ```
 
 ### 方式 2: 配置文件
@@ -44,6 +49,13 @@ ingress:
 
 然后运行:
 ```bash
+cloudflared tunnel run mytunnel
+```
+
+### 方式 3: 环境变量
+
+```bash
+export TUNNEL_EDGE_PROXY_URL="socks5://127.0.0.1:1080"
 cloudflared tunnel run mytunnel
 ```
 
@@ -91,21 +103,21 @@ cloudflared tunnel run mytunnel
 **场景 1: 代理服务器不可达**
 ```bash
 # 即使代理服务器 10.0.0.100:1080 宕机，连接也会自动降级到直连
-cloudflared tunnel run --edge-proxy-url socks5://10.0.0.100:1080 mytunnel
+cloudflared tunnel --edge-proxy-url socks5://10.0.0.100:1080 run mytunnel
 # → 代理失败 → 自动直连 → 隧道正常运行 ✓
 ```
 
 **场景 2: 代理认证失败**
 ```bash
 # 认证信息错误时，自动降级到直连
-cloudflared tunnel run --edge-proxy-url socks5://wrong:creds@proxy:1080 mytunnel
+cloudflared tunnel --edge-proxy-url socks5://wrong:creds@proxy:1080 run mytunnel
 # → 认证失败 → 自动直连 → 隧道正常运行 ✓
 ```
 
 **场景 3: 代理响应超时**
 ```bash
 # 代理服务器响应慢或挂起，自动降级
-cloudflared tunnel run --edge-proxy-url socks5://slow-proxy:1080 mytunnel
+cloudflared tunnel --edge-proxy-url socks5://slow-proxy:1080 run mytunnel
 # → 超时 → 自动直连 → 隧道正常运行 ✓
 ```
 
@@ -135,9 +147,7 @@ ingress:
 
 ```bash
 # 使用特定地区的代理服务器
-cloudflared tunnel run \
-  --edge-proxy-url socks5://hk-proxy.example.com:1080 \
-  mytunnel
+cloudflared tunnel --edge-proxy-url socks5://hk-proxy.example.com:1080 run mytunnel
 ```
 
 ### 场景 3: 多层网络架构
@@ -146,9 +156,7 @@ cloudflared tunnel run \
 
 ```bash
 # 通过跳板机的 SOCKS5 代理连接
-cloudflared tunnel run \
-  --edge-proxy-url socks5://jump-host:1080 \
-  mytunnel
+cloudflared tunnel --edge-proxy-url socks5://jump-host:1080 run mytunnel
 ```
 
 ### 场景 4: 开发测试环境
@@ -169,7 +177,7 @@ edge-proxy-url: socks5://dev-proxy:1080
 
 ❌ **不推荐** (密码会出现在进程列表中):
 ```bash
-cloudflared tunnel run --edge-proxy-url socks5://user:password123@proxy:1080 mytunnel
+cloudflared tunnel --edge-proxy-url socks5://user:password123@proxy:1080 run mytunnel
 ```
 
 ✅ **推荐** (使用配置文件):
@@ -187,8 +195,8 @@ cloudflared tunnel run mytunnel
 
 ```bash
 # 从环境变量读取代理配置
-export EDGE_PROXY_URL="socks5://user:${PROXY_PASSWORD}@proxy:1080"
-cloudflared tunnel run --edge-proxy-url "$EDGE_PROXY_URL" mytunnel
+export TUNNEL_EDGE_PROXY_URL="socks5://user:${PROXY_PASSWORD}@proxy:1080"
+cloudflared tunnel run mytunnel
 ```
 
 ### 3. 代理服务器安全
@@ -215,7 +223,7 @@ curl --socks5 user:pass@proxy-host:1080 https://www.cloudflare.com
 
 3. 检查 cloudflared 日志:
 ```bash
-cloudflared tunnel run --loglevel debug mytunnel
+cloudflared tunnel --loglevel debug run mytunnel
 ```
 
 ### 问题 2: 代理认证失败
@@ -230,7 +238,7 @@ curl --socks5-user user:pass --socks5 proxy-host:1080 https://www.cloudflare.com
 
 查看连接日志，代理失败时会自动降级:
 ```bash
-cloudflared tunnel run --loglevel debug --edge-proxy-url socks5://proxy:1080 mytunnel
+cloudflared tunnel --loglevel debug --edge-proxy-url socks5://proxy:1080 run mytunnel
 ```
 
 ## 📊 性能考虑
@@ -278,13 +286,13 @@ go test -v -run TestDialEdgeWithProxy_FallbackToDirect
 # 需要安装: pip install pysocks
 
 # 测试 1: 正常代理
-cloudflared tunnel run --edge-proxy-url socks5://127.0.0.1:1080 test-tunnel &
+cloudflared tunnel --edge-proxy-url socks5://127.0.0.1:1080 run test-tunnel &
 PID=$!
 sleep 10
 kill $PID
 
 # 测试 2: 无效代理 (应自动降级)
-cloudflared tunnel run --edge-proxy-url socks5://127.0.0.1:9999 test-tunnel &
+cloudflared tunnel --edge-proxy-url socks5://127.0.0.1:9999 run test-tunnel &
 PID=$!
 sleep 10
 kill $PID
@@ -299,6 +307,8 @@ echo "Tests completed"
 - `edgediscovery/dial.go` - 核心拨号逻辑，支持代理和降级
 - `supervisor/tunnel.go` - 隧道配置，包含 `EdgeProxyURL` 字段
 - `cmd/cloudflared/flags/flags.go` - 命令行标志定义
+- `cmd/cloudflared/tunnel/cmd.go` - CLI 参数注册
+- `cmd/cloudflared/tunnel/configuration.go` - 配置解析和传递
 
 ### 支持的协议
 
@@ -336,6 +346,9 @@ A: 目前仅支持 SOCKS5。未来可以扩展支持 HTTP CONNECT 代理。
 **Q: 代理服务器需要支持什么?**
 A: 标准的 SOCKS5 协议（RFC 1928）即可，可选支持用户名/密码认证（RFC 1929）。
 
+**Q: 参数为什么要放在 tunnel 和 run 之间?**
+A: `--edge-proxy-url` 是 tunnel 命令级别的全局参数，适用于所有子命令（run、cleanup 等）。
+
 ## 📚 相关资源
 
 - [SOCKS5 协议规范 (RFC 1928)](https://www.rfc-editor.org/rfc/rfc1928)
@@ -348,4 +361,7 @@ A: 标准的 SOCKS5 协议（RFC 1928）即可，可选支持用户名/密码认
   - 新增 `--edge-proxy-url` 命令行参数
   - 新增 `DialEdgeWithProxy` 函数
   - 新增自动降级到直连的容错机制
-
+- 2026-04-06: 验证功能实现并更新文档
+  - 确认参数位置（tunnel 命令级别）
+  - 更新所有示例命令格式
+  - 补充常见问题解答

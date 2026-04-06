@@ -35,7 +35,7 @@ $ make cloudflared
 ### 2. 参数识别测试
 ```bash
 $ ./cloudflared tunnel --help | grep edge-proxy
-✅ 输出: --edge-proxy-url value    SOCKS5 proxy URL for connections to Cloudflare Edge...
+✅ 输出: --edge-proxy-url value    SOCKS5 proxy URL for connections to Cloudflare Edge. Format: socks5://[user:pass@]host:port. Falls back to direct connection if proxy fails. [$TUNNEL_EDGE_PROXY_URL]
 ```
 
 ### 3. 参数解析测试
@@ -44,7 +44,19 @@ $ ./cloudflared tunnel --edge-proxy-url socks5://100.64.0.10:7890 run test-tunne
 ✅ 参数成功解析，无 "flag provided but not defined" 错误
 ```
 
+### 4. 版本验证
+```bash
+$ ./cloudflared --version
+cloudflared version 2abe9756 (built 2026-04-06-11:07 UTC)
+✅ 编译版本包含代理功能
+```
+
 ## 📖 使用方法
+
+**⚠️ 重要：参数位置**
+- `--edge-proxy-url` 是 `tunnel` 命令级别的参数
+- 必须放在 `tunnel` 和 `run` 之间
+- 格式：`cloudflared tunnel --edge-proxy-url <URL> run <tunnel-name>`
 
 ### 方式 1: 命令行参数
 
@@ -148,23 +160,31 @@ ingress:
    - ✅ 支持环境变量
    - ✅ 支持配置文件
 
-## 🎯 下一步建议
+## 🎯 验证步骤
 
-1. **测试实际代理连接**
-   ```bash
-   # 确保您的 SOCKS5 代理在 100.64.0.10:7890 上运行
-   ./cloudflared tunnel --edge-proxy-url socks5://100.64.0.10:7890 \
-                        --loglevel debug \
-                        run your-tunnel-name
-   ```
+### 1. 测试实际代理连接
+```bash
+# 确保您的 SOCKS5 代理在 100.64.0.10:7890 上运行
+./cloudflared tunnel --edge-proxy-url socks5://100.64.0.10:7890 \
+                     --loglevel debug \
+                     run your-tunnel-name
+```
 
-2. **测试降级机制**
-   ```bash
-   # 使用一个不存在的代理地址，应该会自动降级到直连
-   ./cloudflared tunnel --edge-proxy-url socks5://127.0.0.1:9999 \
-                        --loglevel debug \
-                        run your-tunnel-name
-   ```
+### 2. 测试降级机制
+```bash
+# 使用一个不存在的代理地址，应该会自动降级到直连
+./cloudflared tunnel --edge-proxy-url socks5://127.0.0.1:9999 \
+                     --loglevel debug \
+                     run your-tunnel-name
+```
+
+### 3. 测试认证代理
+```bash
+# 带用户名密码的代理
+./cloudflared tunnel --edge-proxy-url socks5://testuser:testpass@127.0.0.1:1080 \
+                     --loglevel debug \
+                     run your-tunnel-name
+```
 
 3. **生产环境部署**
    - 在配置文件中设置代理 URL
