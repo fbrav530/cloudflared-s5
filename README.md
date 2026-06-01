@@ -29,10 +29,10 @@ to access private origins behind Tunnels for Layer 4 traffic without requiring `
 
 ```bash
 # 通过 SOCKS5 代理运行隧道
-cloudflared tunnel run --edge-proxy-url socks5://127.0.0.1:1080 mytunnel
+cloudflared tunnel --edge-proxy-url socks5://127.0.0.1:1080 run mytunnel
 
 # 带认证的代理
-cloudflared tunnel run --edge-proxy-url socks5://user:pass@proxy:1080 mytunnel
+cloudflared tunnel --edge-proxy-url socks5://user:pass@proxy:1080 run mytunnel
 
 # 或在配置文件中设置
 # config.yml
